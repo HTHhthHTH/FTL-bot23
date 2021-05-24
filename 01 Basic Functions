@@ -123,7 +123,7 @@ def double_dragon_analyse(counted_list):
                     for j in range(i+1, i+dragon_len+1):    # 否则加回来
                         counted_list[j] += 2
                 dragon_len = 0
-            elif counted_list[i] > 1:       # 还在接龙， 一个个减一
+            elif counted_list[i] > 1:       # 还在接龙， 一个个减二
                 dragon_len += 1
                 counted_list[i] -= 2
 
