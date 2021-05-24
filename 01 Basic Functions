@@ -6,8 +6,10 @@ def StandardMode_to_CountingMode(standard_list):
     if 53 in standard_list: counted_list[-1] = 1
     return counted_list
 
+
 def king_analyse(counted_list):
     return counted_list[13:]
+
 
 def bomb_analyse(counted_list):
     count = 0
@@ -24,11 +26,13 @@ def bomb_analyse(counted_list):
     if count == 0: return [0]
     else: return [count, bomb_list]
 
+
 def aeroplane_analyse(counted_list):
     for j in range(12):
         if counted_list[j] == 4 and counted_list[j+1] == 4:
             return 1
     return 0
+
 
 def plane_analyse(counted_list):
     count = 0
@@ -45,17 +49,110 @@ def plane_analyse(counted_list):
     if count == 0: return [0]
     return [1, plane_list]
 
+
 def dragon_analyse(counted_list):
-    pass
+    most_lists = []
+    dragon_len = 0
+    longest = []
+    for i in range(12):       # 不能有2（index从0到11）
+        if counted_list[i] <= 0 or i == 12:
+            if dragon_len >= 5:     # 最少5张牌才能形成龙
+                if dragon_len > len(longest):   # 更新最长
+                    longest = [i-dragon_len, i-1]
+            dragon_len = 0
+        else:
+            dragon_len += 1
+
+    go_on = True        # 循环终止标记；如果循环一轮一条龙都没找到就不再寻找
+    while go_on:
+        go_on = False
+        for i in range(11, -2, -1):     # 从后往前
+            if dragon_len == 5:     # 已经形成龙（这种断开方法会让小的龙更长，因为残缺的龙会接在小龙的后面）
+                most_lists.append([i+1, i+5])
+                go_on = True
+                dragon_len = 0
+                break
+            elif dragon_len > 0 and (counted_list[i] <= 0 or i == -1):      # 没能形成龙就断了
+                for j in range(len(most_lists)):
+                    if i+dragon_len == most_lists[j][0] - 1:   # 若能，接到某一条龙的后面
+                        most_lists[j][0] = i+1
+                        go_on = True
+                if not go_on:
+                    for j in range(i+1, i+dragon_len+1):    # 否则加回来
+                        counted_list[j] += 1
+                dragon_len = 0
+            elif counted_list[i] > 0:       # 还在接龙， 一个个减一
+                dragon_len += 1
+                counted_list[i] -= 1
+
+    most_lists.reverse()
+    if not longest:
+        return [0]
+    else:
+        return [len(most_lists), most_lists, longest]
+
 
 def double_dragon_analyse(counted_list):
-    pass
+    most_lists = []
+    dragon_len = 0
+    longest = []
+    for i in range(12):       # 不能有2（index从0到11）
+        if counted_list[i] <= 1 or i == 12:
+            if dragon_len >= 3:     # 最少3对牌才能形成龙
+                if dragon_len > len(longest):   # 更新最长
+                    longest = [i-dragon_len, i-1]
+            dragon_len = 0
+        else:
+            dragon_len += 1
+
+    go_on = True        # 循环终止标记；如果循环一轮一条龙都没找到就不再寻找
+    while go_on:
+        go_on = False
+        for i in range(11, -2, -1):     # 从后往前
+            if dragon_len == 3:     # 已经形成龙（这种断开方法会让小的龙更长，因为残缺的龙会接在小龙的后面）
+                most_lists.append([i+1, i+3])
+                go_on = True
+                dragon_len = 0
+                break
+            elif dragon_len > 0 and (counted_list[i] <= 1 or i == -1):      # 没能形成龙就断了
+                for j in range(len(most_lists)):
+                    if i+dragon_len == most_lists[j][0] - 1:   # 若能，接到某一条龙的后面
+                        most_lists[j][0] = i+1
+                        go_on = True
+                if not go_on:
+                    for j in range(i+1, i+dragon_len+1):    # 否则加回来
+                        counted_list[j] += 2
+                dragon_len = 0
+            elif counted_list[i] > 1:       # 还在接龙， 一个个减一
+                dragon_len += 1
+                counted_list[i] -= 2
+
+    most_lists.reverse()
+    if not longest:
+        return [0]
+    else:
+        return [len(most_lists), most_lists, longest]
 
 def triplet_analyse(counted_list):
-    pass
+    tri = []
+    for i in range(15):
+        if counted_list[i] >= 3:
+            tri.append(i)
+    return tri
 
 def pair_analyse(counted_list):
-    pass
+    pair = []
+    tmp = 0
+    for i in range(11):     # 在3到J里面找
+        if counted_list[i] == 2:
+            tmp += 1
+        elif tmp < 3:       # 没有达到连续三个对子，即不是双龙
+            for x in range(i-tmp, i):
+                pair.append(x)
+            tmp = 0
+    if counted_list[12] == 2:       # 两张2一定构成孤对
+        pair.append(12)
+    return pair
 
 def single_analyse(counted_list):
     single_list = []
@@ -72,4 +169,110 @@ def single_analyse(counted_list):
     return single_list
 
 def check_type(standard_list):
-    pass
+    l = len(standard_list)
+    count_mode = StandardMode_to_CountingMode(standard_list)
+
+    if l == 0:      # 过
+        return 0
+    if l == 1:    # 单
+        return 1
+    if l == 2:    # 对子/王炸（火箭）
+        if 2 in count_mode:
+            return 2
+        else:
+            return 17
+    if l == 3:      # 三张
+        return 3
+    if l == 4:      # 炸弹/三带一
+        if 4 in count_mode:
+            return 6
+        else:
+            return 4
+    if l == 5:      # 三带二/单顺（龙）
+        if 3 in count_mode:
+            return 5
+        else:
+            return 9
+    if l == 6:      # 四带二单/飞机不带翼/双顺/单顺
+        if 4 in count_mode:
+            return 7
+        elif 3 in count_mode:
+            return 11
+        elif 2 in count_mode:
+            return 10
+        else:
+            return 9
+    if l == 7:  # 单顺
+        return 9
+    if l == 8:      # 航天飞机不带翼/四带二对/飞机带小翼/双顺/单顺
+        if 4 in count_mode:     # 四带二对/航飞无翼
+            if 2 in count_mode:
+                return 8
+            else:
+                return 14
+        elif 3 in count_mode:   # 飞机带小翼
+            return 12
+        elif 2 in count_mode:   # 双顺
+            return 10
+        else:                   # 单顺
+            return 9
+    if l == 9:      # 飞机无翼/单顺
+        if 3 in count_mode:
+            return 11
+        else:
+            return 9
+    if l == 10:     # 飞机带大翼/双顺/单顺
+        if 3 in count_mode:
+            return 16
+        elif 2 in count_mode:
+            return 10
+        else:
+            return 9
+    if l == 11:     # 单顺
+        return 9
+    if l == 12:
+        if 4 in count_mode:     # 航飞带小翼/航飞不带翼
+            if 1 in count_mode:
+                return 15
+            else:
+                return 14
+        elif 3 in count_mode:   # 飞机带小翼/飞机不带翼
+            if 1 in count_mode:
+                return 12
+            else:
+                return 11
+        elif 2 in count_mode:   # 双顺
+            return 10
+        else:
+            return 9
+    if l == 14:     # 双顺
+        return 10
+    if l == 15:     # 飞机带大翼/飞机无翼
+        if 2 in count_mode:
+            return 13
+        else:
+            return 11
+    if l == 16:
+        if 4 in count_mode:     # 航飞带大翼/航飞无翼
+            if 2 in count_mode:
+                return 16
+            else:
+                return 11
+        elif 3 in count_mode:   # 飞机带小翼
+            return 12
+        else:       # 双顺
+            return 10
+
+
+# 样例检验
+print(dragon_analyse(counted_list=[1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 1, 0, 1]))       # pdf里给的参考返回值没有保证剩下的牌不能插进任何一条龙里？
+print(dragon_analyse(counted_list=[2, 3, 3, 2, 2, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0]))
+print(double_dragon_analyse(counted_list=[2, 3, 2, 2, 4, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0]))
+print(double_dragon_analyse(counted_list=[2, 3, 0, 2, 4, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0]))
+print(triplet_analyse(counted_list=[2, 3, 0, 2, 4, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0]))
+print(triplet_analyse(counted_list=[1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 1, 0, 1]))
+print(pair_analyse(counted_list=[2, 3, 0, 2, 2, 2, 0, 0, 0, 0, 1, 0, 2, 1, 1]))
+print(check_type(standard_list=[24, 25, 27, 28, 40, 31, 0, 42]))
+print(check_type(standard_list=[9, 10]))
+print(check_type(standard_list=[4, 5, 6, 7]))
+
