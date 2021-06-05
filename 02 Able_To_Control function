@@ -1,4 +1,4 @@
-def Able_To_Control(my_list, enemy_list):
+def ableToControl(my_list, enemy_list):
     '''mylist是countingMode，enemylist是standardMode'''
     Type = check_type(enemy_list)
     counted_enemy_list = StandardMode_to_CountingMode(enemy_list)
