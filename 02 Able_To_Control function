@@ -2,17 +2,21 @@ def Able_To_Control(my_list, enemy_list):
     '''mylist是countingMode，enemylist是standardMode'''
     Type = check_type(enemy_list)
     counted_enemy_list = StandardMode_to_CountingMode(enemy_list)
+    n1, list1, list2 = None, [], []
     bomb_num = bomb_analyse(my_list)[0]
-    if Type == 1: # 单
+    if bomb_num >= 1:
+        list2 = bomb_analyse(my_list)[1]
+
+    if Type == 1:  # 单
         c = counted_enemy_list.index(1)
         normal_ability = 0
         normal_control_list = []
-        for j in range(c+1, 15):
+        for j in range(c + 1, 15):
             if my_list[j] > 0:
                 normal_ability = 1
                 normal_control_list.append([(0 if i != j else 1) for i in range(15)])
         if bomb_num == 0 and normal_ability == 0:
-            return [0,[],[]]
+            return [0, [], []]
         if bomb_num == 0 and normal_ability == 1:
             return [1, normal_control_list, []]
         if bomb_num > 0 and normal_ability == 0:
@@ -20,16 +24,16 @@ def Able_To_Control(my_list, enemy_list):
         if bomb_num > 0 and normal_ability == 1:
             return [1, normal_control_list, bomb_analyse(my_list)[1]]
 
-    if Type == 2: # 对
+    if Type == 2:  # 对
         c = counted_enemy_list.index(2)
         normal_ability = 0
         normal_control_list = []
-        for j in range(c+1, 15):
+        for j in range(c + 1, 15):
             if my_list[j] > 1:
                 normal_ability = 1
                 normal_control_list.append([(0 if i != j else 2) for i in range(15)])
         if bomb_num == 0 and normal_ability == 0:
-            return [0,[],[]]
+            return [0, [], []]
         if bomb_num == 0 and normal_ability == 1:
             return [1, normal_control_list, []]
         if bomb_num > 0 and normal_ability == 0:
@@ -37,34 +41,129 @@ def Able_To_Control(my_list, enemy_list):
         if bomb_num > 0 and normal_ability == 1:
             return [1, normal_control_list, bomb_analyse(my_list)[1]]
 
-    if Type == 17: # 王炸
-        return [0,[],[]]
+    if Type == 3 or Type == 4 or Type == 5:     # 三带
+        tri = triplet_analyse(my_list)
+        possible_main = []
+        given_main = counted_enemy_list.index(3)  # 对方牌的大小
+        for indx in tri:
+            if indx > given_main:
+                possible_main.append(indx)
+
+        if (not possible_main) and (not list2):
+            n1 = 0      # 没更大的三条,也没炸，管不了
+        else:
+            n1 = 1
+        if possible_main:
+
+            if Type == 3:     # 三带零（三条）
+                for indx in possible_main:
+                    tmp = [0 for _ in range(15)]
+                    tmp[indx] = 3
+                    list1.append(tmp)
+            if Type == 4:     # 三带一
+                possible_sgl = []
+                for i in range(15):
+                    if my_list[i] >= 1:
+                        possible_sgl.append(i)
+                for indx in possible_main:  # indx必然也在possible_sgl里面
+                    if len(possible_sgl) >= 2:
+                        possible_sgl.remove(indx)
+                        for sgl in possible_sgl:
+                            tmp = [0 for _ in range(15)]
+                            tmp[indx], tmp[sgl] = 3, 1
+                            list1.append(tmp)
+                        possible_sgl.append(indx)
+
+            if Type == 5:       # 三带对
+                possible_dbl = []
+                for i in range(15):
+                    if my_list[i] >= 2:
+                        possible_dbl.append(i)
+                for indx in possible_main:  # indx必然也在possible_dbl里面
+                    if len(possible_dbl) >= 2:
+                        possible_dbl.remove(indx)
+                        for dbl in possible_dbl:
+                            tmp = [0 for _ in range(15)]
+                            tmp[indx], tmp[dbl] = 3, 2
+                            list1.append(tmp)
+                        possible_dbl.append(indx)
+
+        return [n1, list1, list2]
 
     if Type == 6: # 炸弹
-        c = counted_enemy_list.index(4)
-        if bomb_num == 0:
-            return [0, [], []]
-        if bomb_num >= 1:
-            bomb_list = [x for x in bomb_analyse(my_list)[1] if x > c]
-            if bomb_list != []:
-                return [1, [], bomb_list]
-            return [0, [], []]
+         c = counted_enemy_list.index(4)
+         if bomb_num == 0:
+             return [0, [], []]
+         if bomb_num >= 1:
+             bomb_list = [x for x in bomb_analyse(my_list)[1] if x > c]
+             if bomb_list != []:
+                 return [1, [], bomb_list]
+             return [0, [], []]
 
-    if Type == 9: # 龙
+    if Type == 7 or Type == 8:      # 四带
+        if bomb_num == 0:
+            n1 = 0      # 没四条(炸)也没火箭，管不了
+        else:
+            n1 = 1
+            given_main = counted_enemy_list.index(4)
+            possible_main = []
+            for indx in list2:
+                if indx != 13 and indx > given_main:
+                    possible_main.append(indx)
+
+            if possible_main:
+                if Type == 7:       # 四带二单
+                    possible_twoSgl = []
+                    for i in range(15):
+                        if my_list[i] >= 1:
+                            possible_twoSgl.append(i)
+                    for indx in possible_main:      # indx必然也在possible_twoSgl里面
+                        if len(possible_twoSgl) >= 3:
+                            possible_twoSgl.remove(indx)
+                            for j in range(len(possible_twoSgl)):
+                                one = possible_twoSgl[j]
+                                for k in range(j+1, len(possible_twoSgl)):
+                                    another = possible_twoSgl[k]
+                                    tmp = [0 for _ in range(15)]
+                                    tmp[indx], tmp[one], tmp[another] = 4, 1, 1
+                                    list1.append(tmp)
+                            possible_twoSgl.append(indx)
+
+                if Type == 8:       # 四带二对
+                    possible_twoDbl = []
+                    for i in range(15):
+                        if my_list[i] >= 2:
+                            possible_twoDbl.append(i)
+
+                    for indx in possible_main:  # indx必然也在possible_twoDbl里面
+                        if len(possible_twoDbl) >= 3:
+                            possible_twoDbl.remove(indx)
+                            for j in range(len(possible_twoDbl)):
+                                one = possible_twoDbl[j]
+                                for k in range(j + 1, len(possible_twoDbl)):
+                                    another = possible_twoDbl[k]
+                                    tmp = [0 for _ in range(15)]
+                                    tmp[indx], tmp[one], tmp[another] = 4, 2, 2
+                                    list1.append(tmp)
+                            possible_twoDbl.append(indx)
+
+        return [n1, list1, list2]
+
+    if Type == 9:  # 龙
         dragon_length = sum(counted_enemy_list)
         dragon_head = counted_enemy_list.index(1)
         normal_ability = 0
         normal_control_list = []
-        for j in range(dragon_head+1, 12-dragon_length):
+        for j in range(dragon_head + 1, 12 - dragon_length):
             count = 0
             for i in range(dragon_length):
-                if my_list[j+i] >= 1:
+                if my_list[j + i] >= 1:
                     count += 1
             if count == dragon_length:
-                normal_control_list.append([(1 if k in range(j,j+dragon_length) else 0) for k in range(15)])
+                normal_control_list.append([(1 if k in range(j, j + dragon_length) else 0) for k in range(15)])
                 normal_ability = 1
         if bomb_num == 0 and normal_ability == 0:
-            return [0,[],[]]
+            return [0, [], []]
         if bomb_num == 0 and normal_ability == 1:
             return [1, normal_control_list, []]
         if bomb_num > 0 and normal_ability == 0:
@@ -72,24 +171,60 @@ def Able_To_Control(my_list, enemy_list):
         if bomb_num > 0 and normal_ability == 1:
             return [1, normal_control_list, bomb_analyse(my_list)[1]]
 
-    if Type == 10: # 连对
+    if Type == 10:  # 连对
         double_dragon_length = counted_enemy_list.count(2)
         double_dragon_head = counted_enemy_list.index(2)
         normal_ability = 0
         normal_control_list = []
-        for j in range(double_dragon_head+1, 12-double_dragon_length):
+        for j in range(double_dragon_head + 1, 12 - double_dragon_length):
             count = 0
             for i in range(double_dragon_length):
-                if my_list[j+i] >= 2:
+                if my_list[j + i] >= 2:
                     count += 1
             if count == double_dragon_length:
-                normal_control_list.append([(2 if k in range(j,j+double_dragon_length) else 0) for k in range(15)])
+                normal_control_list.append([(2 if k in range(j, j + double_dragon_length) else 0) for k in range(15)])
                 normal_ability = 1
         if bomb_num == 0 and normal_ability == 0:
-            return [0,[],[]]
+            return [0, [], []]
         if bomb_num == 0 and normal_ability == 1:
             return [1, normal_control_list, []]
         if bomb_num > 0 and normal_ability == 0:
             return [1, [], bomb_analyse(my_list)[1]]
         if bomb_num > 0 and normal_ability == 1:
             return [1, normal_control_list, bomb_analyse(my_list)[1]]
+
+    if Type == 11 or Type == 12 or Type == 13:      # 飞机
+        given_main = plane_analyse(counted_enemy_list)[1]
+        possible = plane_analyse(my_list)
+        if possible[0] == 0 and (not list2):
+            n1 = 0      # 没飞机也没炸，管不了
+        else:
+            n1 = 1
+        if possible[0] == 1:
+            possible_main = possible[1]
+            given_start = min(given_main)
+            given_len = len(given_main)
+            for i in range(len(possible_main) - given_len + 1):
+                if possible_main[i] > given_start and possible_main[i+given_len-1] == possible_main[i] + given_len - 1:
+                    list1.append([possible_main[x] for x in range(i, i+given_len)])
+        return [n1, list1, list2]
+
+    if Type == 14 or Type == 15 or Type == 16:      # 航天飞机
+        given_main = bomb_analyse(counted_enemy_list)[1]
+        if bomb_num == 0:
+            n1 = 0  # 没四条(炸)，管不了
+        else:
+            n1 = 1
+            possible_main = bomb_analyse(my_list)[1]
+            for x in range(len(possible_main)):     # 去掉火箭
+                if possible_main[x] == 13:
+                    possible_main.pop(x)
+            given_start = min(given_main)
+            given_len = len(given_main)
+            for i in range(len(possible_main) - given_len + 1):
+                if possible_main[i] > given_start and possible_main[i + given_len - 1] == possible_main[i] + given_len - 1:
+                    list1.append([possible_main[x] for x in range(i, i + given_len)])
+        return [n1, list1, list2]
+
+    if Type == 17:  # 王炸
+        return [0, [], []]
